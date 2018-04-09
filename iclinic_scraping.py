@@ -35,8 +35,15 @@ import datetime
 SEARCHBAR_LOCATION =(1281,125)
 SCROLLDOWN_BUTTON_LOCATION = (1917,737)
 PATIENTLIST_RESULT_AREA = (1118,200,713,546)
+FIRST_PATIENT_LOCATION =(1432,214)
 MIN_DATE_ORDINAL = 693596
-MAX_DATE_ORDINAL = 693597
+#MIN_DATE_ORDINAL = 714446
+#this date corresponds to jan 1, 1910
+MAX_DATE_ORDINAL = 697248
+
+
+#date coresponding to feb 1 1957 which is a good month to test
+#MAX_DATE_ORDINAL = 714447
 #MAX_DATE_ORDINAL = 736695
 
 def clear_search_box():
@@ -46,23 +53,24 @@ def clear_search_box():
 	for i in range(0,10):
 		auto.press('backspace')
 
-def click_to_next_page():
-	auto.moveTo(SCROLLDOWN_BUTTON_LOCATION)
-	for i in range(0,14):
-		auto.click()
-	
+def scroll_to_next_page():
+	for i in range(0,16):
+		auto.press('down')
+
 def search_DOB(current_ordinal_date):
 	clear_search_box()
 	current_date = datetime.date.fromordinal(current_ordinal_date)
-	auto.typewrite(str(current_date.month) + "/" + str(current_date.day)+ "/"+ str(current_date.year))
+	auto.typewrite(str(current_date.month).zfill(2) + "/" + str(current_date.day).zfill(2)+ "/"+ str(current_date.year))
 	auto.press('enter')
 	
 #Function to be called when the date has been searched and we want to capture 3 full page screenshots
 def cap_tables():
 	img1 = auto.screenshot(region = PATIENTLIST_RESULT_AREA)
-	click_to_next_page()
+	auto.moveTo(FIRST_PATIENT_LOCATION)
+	auto.click()
+	scroll_to_next_page()
 	img2 = auto.screenshot(region = PATIENTLIST_RESULT_AREA)
-	click_to_next_page()
+	scroll_to_next_page()
 	img3 = auto.screenshot(region = PATIENTLIST_RESULT_AREA)
 	return (img1,img2,img3)
 
@@ -80,13 +88,15 @@ for enumerate(every date from 01-01-1900 to present):
 	
 def main():	
 	ap = argparse.ArgumentParser()
-	ap.add_argument("--db","--database",required =True)
+	ap.add_argument("--db","--database",required =False)
 	args = ap.parse_args()
 	
 	
 	current_month = 1
 	date_index = MIN_DATE_ORDINAL
 	#while there are still dates
+	os.chdir("Screens")
+		
 	while date_index < MAX_DATE_ORDINAL:	
 		#while we are in one month
 		image_list = []
@@ -97,18 +107,16 @@ def main():
 			screen_caps = cap_tables()
 			
 			[image_list.append(element) for element in screen_caps]
-			##############################################################TESTING
-			##############################################################TESTING
-			break
+			
 			date_index+=1
-		current_month = datetime.date.fromordinal(date_index).month
-		#list comprehension to write each of those PIL images to a folder in the directory "Screens"
-		os.chdir("Screens")
-		os.mkdir("{}-{}".format(datetime.date.fromordinal(date_index).year, datetime.date.fromordinal(date_index).month))
-		os.chdir("{}-{}".format(datetime.date.fromordinal(date_index).year, datetime.date.fromordinal(date_index).month))
-		[cv2.imwrite("{}.png".format(str(index)),numpy.array(element)) for index, element in enumerate(image_list)]
-		os.chdir("..")
 		
+		#list comprehension to write each of those PIL images to a folder in the directory "Screens"
+		os.mkdir("{}-{}".format(datetime.date.fromordinal(date_index).year, current_month))
+		os.chdir("{}-{}".format(datetime.date.fromordinal(date_index).year, current_month))
+		[cv2.imwrite("{}.png".format(str(index)),numpy.array(element)) for index, element in enumerate(image_list)]
+		
+		os.chdir("..")
+		current_month = datetime.date.fromordinal(date_index).month
 		
 
 if __name__ == "__main__":

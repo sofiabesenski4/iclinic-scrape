@@ -31,17 +31,19 @@ Enter the Screens directory:
 def main():
 	#enter screens
 	os.chdir("Screens")
+	
 	extracted_patient_tuples = []
 	extracted_patient_nonmatches = []
+	print(os.getcwd())
 	for folder in os.listdir(os.getcwd()):
-		
+	#	print("here")
 		folder_path = os.path.join(os.getcwd(),folder)
-		#print(folder_path)
+		print(folder_path)
 		
 		for image in os.listdir(folder_path):
 			#call to ocr
 			#print(image)
-	#		print(cv2.imread(os.path.join(folder_path, image)).shape)
+			#print(cv2.imread(os.path.join(folder_path, image)).shape)
 			text = OCR_img(Image.open(os.path.join(folder_path, image)))
 			
 			#append to the list of found patients in this folder
@@ -85,7 +87,7 @@ def OCR_img(image_file):
 
 	#we can finally apply tesseract to the saved image using python bindings, while removing the temp image from disk
 	text = pytesseract.image_to_string(Image.open(filename), lang = 'eng', config = '-psm 6')
-	print(text)
+	#print(text)
 	os.remove(filename)	
 	return text
 #takes a block of text, each patient is separated by a newline character
@@ -109,7 +111,7 @@ Test, Tester 123456789
 def extract_patient_info(raw_text):
 	patient_lines = raw_text.split('\n')
 	#group 1 : last name, 2: first name, 3: PHN, 4: DOB
-	patient_pattern = re.compile(r'(\w+?), (\w+).* (\d{10}) (\d\d/\d\d/\d\d\d\d) \d{1,3}')
+	patient_pattern = re.compile(r'(\w+?),? (\w+).* ((?:\d(?:\s?)){10}) (\d\d/\d\d/\d\d\d\d) \w*')
 	#print(patient_lines)
 	#tuples have the form (last_name,first_name,PHN,DOB)
 	list_of_patient_tuples = []
@@ -118,13 +120,15 @@ def extract_patient_info(raw_text):
 		if re.search(patient_pattern, patient) is not None:
 			date_elements = re.search(patient_pattern, patient).group(4).split("/")
 			datetime_object = datetime.date(month = int(date_elements[0]),year = int(date_elements[2]), day = int(date_elements[1])).isoformat()
-			list_of_patient_tuples.append((re.search(patient_pattern, patient).group(3),re.search(patient_pattern, patient).group(2),re.search(patient_pattern, patient).group(1),datetime_object))
+			list_of_patient_tuples.append((re.sub(" ", "", re.search(patient_pattern, patient).group(3)),re.search(patient_pattern, patient).group(2),re.search(patient_pattern, patient).group(1),datetime_object))
 		else:
+			if re.search(r'create new patient|‘ l—I|‘ l—',patient):
+				continue
 			list_of_nonmatches.append(patient)
 	#return format will be a tuple of lists of tuples, first list represents patient lines which were correctly identified,
 	# second list represents patient lines which were not correctly interpretted
-	print(list_of_patient_tuples)
-	print(list_of_nonmatches)
+	#print(list_of_patient_tuples)
+	#print(list_of_nonmatches)
 	return (list_of_patient_tuples,list_of_nonmatches)	
 """
 def insert_patient_tuples_into_db(db_ptr, patient_tuples):
