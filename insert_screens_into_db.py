@@ -53,6 +53,7 @@ def main():
 	os.chdir("..")
 	fp = open("mismatches.txt","w")
 	[fp.write(element + "\n") for element in extracted_patient_nonmatches]
+	print(extracted_patient_tuples)
 	insert_patient_set_into_db(DB("test_patients"), extracted_patient_tuples)
 	
 	return

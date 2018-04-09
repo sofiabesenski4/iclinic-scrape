@@ -36,38 +36,39 @@ SEARCHBAR_LOCATION =(1281,125)
 SCROLLDOWN_BUTTON_LOCATION = (1917,737)
 PATIENTLIST_RESULT_AREA = (1118,200,713,546)
 FIRST_PATIENT_LOCATION =(1432,214)
-MIN_DATE_ORDINAL = 693596
+#MIN_DATE_ORDINAL = 693596
 #MIN_DATE_ORDINAL = 714446
 #this date corresponds to jan 1, 1910
-MAX_DATE_ORDINAL = 697248
+MIN_DATE_ORDINAL = 697248
+MAX_DATE_ORDINAL = 700900
 
 
 #date coresponding to feb 1 1957 which is a good month to test
-#MAX_DATE_ORDINAL = 714447
-#MAX_DATE_ORDINAL = 736695
+#MIN_DATE_ORDINAL = 714447
+#MAX_DATE_ORDINAL = 714449
 
 def clear_search_box():
 	auto.moveTo(SEARCHBAR_LOCATION)
 	auto.click()
 	auto.click(clicks=2)
-	for i in range(0,10):
-		auto.press('backspace')
+	#for i in range(0,10):
+	auto.press('backspace',10)
 
 def scroll_to_next_page():
-	for i in range(0,16):
-		auto.press('down')
-
+	auto.press('pagedown')
+	time.sleep(0.3)
 def search_DOB(current_ordinal_date):
 	clear_search_box()
 	current_date = datetime.date.fromordinal(current_ordinal_date)
 	auto.typewrite(str(current_date.month).zfill(2) + "/" + str(current_date.day).zfill(2)+ "/"+ str(current_date.year))
 	auto.press('enter')
-	
+	time.sleep(0.5)
 #Function to be called when the date has been searched and we want to capture 3 full page screenshots
 def cap_tables():
 	img1 = auto.screenshot(region = PATIENTLIST_RESULT_AREA)
 	auto.moveTo(FIRST_PATIENT_LOCATION)
 	auto.click()
+	scroll_to_next_page()
 	scroll_to_next_page()
 	img2 = auto.screenshot(region = PATIENTLIST_RESULT_AREA)
 	scroll_to_next_page()
@@ -103,7 +104,7 @@ def main():
 		while datetime.date.fromordinal(date_index).month == current_month: 
 			clear_search_box()
 			search_DOB(date_index)
-			time.sleep(1)
+			time.sleep(0.5)
 			screen_caps = cap_tables()
 			
 			[image_list.append(element) for element in screen_caps]
