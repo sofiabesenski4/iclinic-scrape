@@ -89,7 +89,7 @@ def main():
 	#while there are still dates
 	while date_index < MAX_DATE_ORDINAL:	
 		#while we are in one month
-		image_list = []	
+		image_list = []
 		while datetime.date.fromordinal(date_index).month == current_month: 
 			clear_search_box()
 			search_DOB(date_index)
