@@ -1,3 +1,11 @@
+"""
+
+
+This script is meant to go into a folder called screens, and in each of the subdirectories, OCR each image file,
+extract the formatted patient information, double check to make sure there is no duplicates in our patient list (because we take
+3 screenshots while scrolling down to account for a specific DOB with many patients), and then input the unique list into a specified PostGreSQL 
+database table called "patients"
+"""
 #insert_screens_into_db.py
 from pg import DB
 #using pytesseract as the ocr engine
@@ -30,8 +38,9 @@ Enter the Screens directory:
 """
 def main():
 	#enter screens
+	dup_fp = open("duplicates.txt", "w")
 	os.chdir("Screens")
-	
+	dup_fp.write("Tuples have the form: (phn,first name, last name, DOB)\n")
 	extracted_patient_tuples = []
 	extracted_patient_nonmatches = []
 	print(os.getcwd())
@@ -42,8 +51,6 @@ def main():
 		
 		for image in os.listdir(folder_path):
 			#call to ocr
-			#print(image)
-			#print(cv2.imread(os.path.join(folder_path, image)).shape)
 			text = OCR_img(Image.open(os.path.join(folder_path, image)))
 			
 			#append to the list of found patients in this folder
@@ -53,8 +60,7 @@ def main():
 	os.chdir("..")
 	fp = open("mismatches.txt","a")
 	[fp.write(element + "\n") for element in extracted_patient_nonmatches]
-	print(extracted_patient_tuples)
-	insert_patient_set_into_db(DB("test_patients"), extracted_patient_tuples)
+	insert_patient_set_into_db(DB("test_patients"), dup_fp, extracted_patient_tuples)
 	
 	return
 
@@ -128,11 +134,22 @@ def extract_patient_info(raw_text):
 			list_of_nonmatches.append(patient)
 	#return format will be a tuple of lists of tuples, first list represents patient lines which were correctly identified,
 	# second list represents patient lines which were not correctly interpretted
-	#print(list_of_patient_tuples)
-	#print(list_of_nonmatches)
+	
+	#this is just one final check to see if there is duplicate phns in the patient set
+	encountered_phns = set()
+	checked_list = []
+	for patient in list_of_patient_tuples:
+		if patient[0] not in encountered_phns:
+			encountered_phns.add(patient[0])
+			checked_list.append(patient)
+		else:
+			continue
+	list_of_patient_tuples = checked_list
+	
 	return (list_of_patient_tuples,list_of_nonmatches)	
-"""
-def insert_patient_tuples_into_db(db_ptr, patient_tuples):
+
+#there is explicit checking to see if each phn already has a row in the table
+def insert_patient_set_into_db(db_ptr, dup_ptr, patient_set):
 	#tuples are of the form: (new_patient_phn,new_patient_first_name,new_patient_last_name,new_patient_dob_datetime_obj)
 	try:
 		assert "public.patients" in db_ptr.get_tables()
@@ -144,26 +161,16 @@ def insert_patient_tuples_into_db(db_ptr, patient_tuples):
 	except AssertionError:
 		print("could not find required column names: dob, phn, first_name, or last_name")
 		return
-	db_ptr.inserttable("public.patients",patient_tuples)
-	return
-"""
-def insert_patient_set_into_db(db_ptr, patient_set):
-	#tuples are of the form: (new_patient_phn,new_patient_first_name,new_patient_last_name,new_patient_dob_datetime_obj)
-	try:
-		assert "public.patients" in db_ptr.get_tables()
-	except AssertionError:
-		print("could not find public.patients db in patients_db_test on system")
-		return
-	try:
-		assert  "phn" and "first_name" and "last_name" and "dob" in db_ptr.get_attnames("public.patients")
-	except AssertionError:
-		print("could not find required column names: dob, phn, first_name, or last_name")
-		return
-	db_ptr.inserttable("public.patients",patient_set)
+	for patient in patient_set:
+		if db_ptr.query("select * from patients where phn = '{}';".format(patient[0])):
+			#if this triggers, there is a phn in the database already existing, associated with a different patient, or there was a duplicate in our set that 
+			#somehow passed through the checking in the extract_patient_info function
+			dup_ptr.write(str(patient)+"\n")
+			
 	return 
 
 if __name__ == "__main__":
 	main()
+		
 	
-	
-	
+		

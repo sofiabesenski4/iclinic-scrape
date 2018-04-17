@@ -22,6 +22,8 @@ for enumerate(every date from 01-01-1900 to present):
 	
 	
 """
+
+#import all the modules
 import numpy
 import cv2
 import argparse
@@ -31,6 +33,8 @@ import pyautogui as auto
 import PIL
 import time
 import datetime
+
+
 #These are all constants which are specific to the computer monitor in the office
 SEARCHBAR_LOCATION =(1281,125)
 SCROLLDOWN_BUTTON_LOCATION = (1917,737)
