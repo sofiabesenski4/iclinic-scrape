@@ -19,8 +19,9 @@ def change_contrast(img, level):
         return 128 + factor * (c - 128)
     return img.point(contrast)
 
+os.chdir("Screens/1900-1")
 
-image_list = ["0.png"]
+image_list = ["0.png","74.png"]
 for image_name in image_list:
 	#print(image)
 	temp = Image.open(image_name)
@@ -30,7 +31,7 @@ for image_name in image_list:
 	
 	#gray = col
 	#gray = temp.convert('L')	
-	bw = temp.point(lambda x: 0 if x<210 else 255)
+	bw = temp.point(lambda x: 0 if x<200 else 255)
 	#gray = gray.filter(ImageFilter.FIND_EDGES)
 	#cleaned_image_name = str(os.getpid()) + '_cleaned.jpg'
 	#bw.save(cleaned_image_name)
@@ -44,7 +45,7 @@ for image_name in image_list:
 	#gray = cv2.threshold(gray, 200,255,cv2.THRESH_OTSU)[1]
 	#gray = cv2.threshold(gray, 200, 255, cv2.THRESH_TOZERO)[1]
 	#gray = cv2.adaptiveThreshold(gray,255,cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY,11,2)[1]
-	bw = cv2.medianBlur(bw,3)
+	#bw = cv2.medianBlur(bw,3)
 	#write the image file temporarily to disk so we can OCR it with the pytesseract interface, accessing
 	# the (natively Java) tesseract application 
 	#cv2.imshow("img,",image)
