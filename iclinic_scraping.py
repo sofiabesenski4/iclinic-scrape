@@ -40,38 +40,46 @@ SEARCHBAR_LOCATION =(1281,125)
 SCROLLDOWN_BUTTON_LOCATION = (1917,737)
 PATIENTLIST_RESULT_AREA = (1118,200,713,546)
 FIRST_PATIENT_LOCATION =(1432,214)
-MIN_DATE_ORDINAL = 693596
+DATABASE_ERROR_BUTTON = (1004,640)
+#MIN_DATE_ORDINAL = 693596
 #MIN_DATE_ORDINAL = 714446
-#this date corresponds to jan 1, 1910
-MAX_DATE_ORDINAL = 697248
+#this date corresponds to apr 1, 1917
+MIN_DATE_ORDINAL = 729571
+MAX_DATE_ORDINAL = 736695
 
 
+#date coresponding to feb 1 1957 which is a good month to test
+#MIN_DATE_ORDINAL = 714459
+#MAX_DATE_ORDINAL = 714460
 
 def clear_search_box():
 	auto.moveTo(SEARCHBAR_LOCATION)
 	auto.click()
 	auto.click(clicks=2)
-	for i in range(0,10):
-		auto.press('backspace')
+	#for i in range(0,10):
+	auto.press('backspace',10)
 
 def scroll_to_next_page():
-	for i in range(0,16):
-		auto.press('down')
-
+	auto.press('pagedown')
+	
 def search_DOB(current_ordinal_date):
 	clear_search_box()
 	current_date = datetime.date.fromordinal(current_ordinal_date)
 	auto.typewrite(str(current_date.month).zfill(2) + "/" + str(current_date.day).zfill(2)+ "/"+ str(current_date.year))
 	auto.press('enter')
-	
+	time.sleep(0.5)
 #Function to be called when the date has been searched and we want to capture 3 full page screenshots
 def cap_tables():
 	img1 = auto.screenshot(region = PATIENTLIST_RESULT_AREA)
 	auto.moveTo(FIRST_PATIENT_LOCATION)
 	auto.click()
 	scroll_to_next_page()
+	scroll_to_next_page()
+	time.sleep(0.5)
 	img2 = auto.screenshot(region = PATIENTLIST_RESULT_AREA)
 	scroll_to_next_page()
+	auto.press('up')
+	time.sleep(0.3)
 	img3 = auto.screenshot(region = PATIENTLIST_RESULT_AREA)
 	return (img1,img2,img3)
 
@@ -92,19 +100,19 @@ def main():
 	ap.add_argument("--db","--database",required =False)
 	args = ap.parse_args()
 	
-	
-	current_month = 1
+	current_year = datetime.date.fromordinal(MIN_DATE_ORDINAL).year
+	current_month = datetime.date.fromordinal(MIN_DATE_ORDINAL).month
 	date_index = MIN_DATE_ORDINAL
 	#while there are still dates
 	os.chdir("Screens")
-		
+	timeout_counter = 0
 	while date_index < MAX_DATE_ORDINAL:	
 		#while we are in one month
 		image_list = []
 		while datetime.date.fromordinal(date_index).month == current_month: 
 			clear_search_box()
 			search_DOB(date_index)
-			time.sleep(1)
+			time.sleep(0.7)
 			screen_caps = cap_tables()
 			
 			[image_list.append(element) for element in screen_caps]
@@ -112,13 +120,32 @@ def main():
 			date_index+=1
 		
 		#list comprehension to write each of those PIL images to a folder in the directory "Screens"
-		os.mkdir("{}-{}".format(datetime.date.fromordinal(date_index).year, current_month))
-		os.chdir("{}-{}".format(datetime.date.fromordinal(date_index).year, current_month))
+		os.mkdir("{}-{}".format(current_year, current_month))
+		os.chdir("{}-{}".format(current_year, current_month))
 		[cv2.imwrite("{}.png".format(str(index)),numpy.array(element)) for index, element in enumerate(image_list)]
 		
 		os.chdir("..")
 		current_month = datetime.date.fromordinal(date_index).month
-		
+		current_year = datetime.date.fromordinal(date_index).year
+		timeout_counter+=1
+		auto.moveTo(DATABASE_ERROR_BUTTON)
+		auto.click()
+		time.sleep(0.1)
+		auto.click()
+		time.sleep(0.1)
+		auto.click()
+		time.sleep(0.1)
+		auto.click()
+		time.sleep(0.1)
+		auto.click()
+		time.sleep(0.1)
+		auto.click()
+		time.sleep(0.1)
+		auto.click()
+		time.sleep(0.1)
+		if timeout_counter == 60:
+			time.sleep(3600)
+			timeout_counter = 0
 
 if __name__ == "__main__":
 	main()
