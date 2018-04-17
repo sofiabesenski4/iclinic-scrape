@@ -51,7 +51,7 @@ def main():
 			[extracted_patient_nonmatches.append(element) for element in extract_patient_info(text)[1]]
 		extracted_patient_tuples = list(set(extracted_patient_tuples))
 	os.chdir("..")
-	fp = open("mismatches.txt","w")
+	fp = open("mismatches.txt","a")
 	[fp.write(element + "\n") for element in extracted_patient_nonmatches]
 	print(extracted_patient_tuples)
 	insert_patient_set_into_db(DB("test_patients"), extracted_patient_tuples)
