@@ -23,6 +23,7 @@ import re
 import datetime
 from PIL import Image
 from PIL import ImageFilter
+from itertools import groupby
 """
 pseudocode:
 
@@ -36,19 +37,21 @@ Enter the Screens directory:
 		convert set of tuples to a list and inserttable into the db
 
 """
+def keyfunc(s):
+	return [int(''.join(g)) if k else ''.join(g) for k, g in groupby(s, str.isdigit)]
+
 def main():
 	#enter screens
-	dup_fp = open("duplicates.txt", "w")
+	dup_fp = open("duplicates.txt", "a")
+	mm_fp = open("mismatches.txt","a")
+	processed_fp = open("processed_folders.txt", 'a')
 	os.chdir("Screens")
-	dup_fp.write("Tuples have the form: (phn,first name, last name, DOB)\n")
 	extracted_patient_tuples = []
 	extracted_patient_nonmatches = []
 	print(os.getcwd())
-	for folder in os.listdir(os.getcwd()):
-	#	print("here")
+	for folder in sorted(os.listdir(os.getcwd()), key=keyfunc):
 		folder_path = os.path.join(os.getcwd(),folder)
-		print(folder_path)
-		
+		print(folder_path)	
 		for image in os.listdir(folder_path):
 			#call to ocr
 			text = OCR_img(Image.open(os.path.join(folder_path, image)))
@@ -57,11 +60,13 @@ def main():
 			[extracted_patient_tuples.append(element) for element in extract_patient_info(text)[0]]
 			[extracted_patient_nonmatches.append(element) for element in extract_patient_info(text)[1]]
 		extracted_patient_tuples = list(set(extracted_patient_tuples))
-	os.chdir("..")
-	fp = open("mismatches.txt","a")
-	[fp.write(element + "\n") for element in extracted_patient_nonmatches]
-	insert_patient_set_into_db(DB("test_patients"), dup_fp, extracted_patient_tuples)
-	
+		os.chdir("..")
+		[mm_fp.write(element + "\n") for element in extracted_patient_nonmatches]
+		insert_patient_set_into_db(DB("patient_data"), dup_fp, extracted_patient_tuples)
+		processed_fp.write(folder+'\n')
+		extracted_patient_tuples = []
+		extracted_patient_nonmatches = []
+		os.chdir("Screens")
 	return
 
 def OCR_img(image_file):
@@ -162,11 +167,13 @@ def insert_patient_set_into_db(db_ptr, dup_ptr, patient_set):
 		print("could not find required column names: dob, phn, first_name, or last_name")
 		return
 	for patient in patient_set:
-		if db_ptr.query("select * from patients where phn = '{}';".format(patient[0])):
+		if db_ptr.query("select * from patients where phn = '{}';".format(patient[0])).ntuples()>0:
 			#if this triggers, there is a phn in the database already existing, associated with a different patient, or there was a duplicate in our set that 
 			#somehow passed through the checking in the extract_patient_info function
 			dup_ptr.write(str(patient)+"\n")
-			
+		else:
+			db_ptr.insert("public.patients",first_name=patient[1], last_name= patient[2],dob = patient[3],phn = patient[0])
+
 	return 
 
 if __name__ == "__main__":
